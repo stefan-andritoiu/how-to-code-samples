@@ -6,6 +6,8 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import mraa.Platform;
+import mraa.mraa;
 import upm_gas.TP401;
 import upm_grovespeaker.GroveSpeaker;
 
@@ -26,14 +28,15 @@ public class AirQualitySensor {
     private static upm_grovespeaker.GroveSpeaker speaker;
     private static upm_gas.TP401 airQualitySensor;
     private static int prev = 0;
+    private static int airPin = 0, speakerPin = 0;
 
     /**
      * Initializes sensors
      */
-    private static void initSensors(){
-	speaker = new GroveSpeaker(5);
-	airQualitySensor = new TP401(0);
-    }
+	private static void initSensors() {
+		speaker = new GroveSpeaker(speakerPin);
+		airQualitySensor = new TP401(airPin);
+	}
 
     /**
      * Plays a chime sound using the Grove speaker
@@ -82,6 +85,21 @@ public class AirQualitySensor {
      */
     public static void main(String[] args) {
 	System.out.println("Starting main");
+
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			speakerPin = 5;
+			airPin = 0;
+		} else if (platform == Platform.INTEL_DE3815) {
+			speakerPin = 5 + 512;
+			airPin = 0 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
 	try {
 	    config.load(AirQualitySensor.class.getClassLoader().getResourceAsStream("config.properties"));
 	} catch (IOException e) {

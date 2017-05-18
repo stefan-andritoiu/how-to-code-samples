@@ -20,14 +20,18 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import mraa.Platform;
+import mraa.mraa;
+
 public class WateringSystem {
 
 	private static final String PUMP_ON = "on";
 	private static final String PUMP_OFF = "off";
 	private static MoistureController moistureController;
 	private static FlowSensor flowSensor;
-
 	private static WaterPump pump ;
+	private static int flowPin = 0, moistPin = 0, pumpPin = 0;
+
 	private static HashMap<Integer,Boolean> schedule;
 	private static Properties config = new Properties();
 	private static boolean shouldWaterPumpBeCurrentlyOn = false;
@@ -159,9 +163,9 @@ public class WateringSystem {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		flowSensor = new FlowSensor();
-		pump = new WaterPump();
-		moistureController = new MoistureController(1);
+		flowSensor = new FlowSensor(flowPin);
+		pump = new WaterPump(pumpPin);
+		moistureController = new MoistureController(moistPin);
 		moistureController.getCurrentMoistureValue();
 
 	}
@@ -279,6 +283,21 @@ public class WateringSystem {
 	}
 
 	public static void main(String[] args) {
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			flowPin = 2;
+			moistPin = 1;
+			pumpPin = 4;
+		} else if (platform == Platform.INTEL_DE3815) {
+			flowPin = 2 + 512;
+			moistPin = 1 + 512;
+			pumpPin = 4 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
 		loadConfigurationFile();
 		initiateSensors();
 		initiateSchedule();

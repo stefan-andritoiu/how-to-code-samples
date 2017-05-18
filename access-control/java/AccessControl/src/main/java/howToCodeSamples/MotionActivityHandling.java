@@ -22,12 +22,11 @@ public class MotionActivityHandling {
     /**
      * The constructor that initializes the LCD and the motion sensor
      */
-    public MotionActivityHandling(){
-	this.motionSensor = new BISS0001(4);
-	this.lcd = new LcdSensor(6);
+    public MotionActivityHandling(int screenBus, int motionPin){
+	this.motionSensor = new BISS0001(motionPin);
+	this.lcd = new LcdSensor(screenBus);
     }
 
-    
     /**
      * A callback function that runs "lookForMotion()" after TIMEOUT
      * 

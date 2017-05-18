@@ -41,15 +41,16 @@ public class AlarmClock {
 	private static Timer alarmTimerObj = new Timer();
 	private static boolean alarmActive = false;
 	private static boolean tick = true;//for the alarm on-off sound
+	private static int screenBus = 0, rotaryPin = 0, buttonPin = 0, buzzerPin = 0;
 
 	/**
 	 * initialize sensors values
 	 */
-	public static void initSensors(){
-		lcdScreen = new AlarmLcd();
-		buzzer = new AlarmBuzzer(5);
-		rotary = new GroveRotary(0);
-		button = new GroveButton(4);
+	public static void initSensors() {
+		lcdScreen = new AlarmLcd(screenBus);
+		buzzer = new AlarmBuzzer(buzzerPin);
+		rotary = new GroveRotary(rotaryPin);
+		button = new GroveButton(buttonPin);
 	}
 	
 	/**
@@ -205,10 +206,21 @@ public class AlarmClock {
 
 	public static void main(String[] args) {
 		// check that we are running on Galileo or Edison
+
 		Platform platform = mraa.getPlatformType();
-		if (platform != Platform.INTEL_GALILEO_GEN1 &&
-				platform != Platform.INTEL_GALILEO_GEN2 &&
-				platform != Platform.INTEL_EDISON_FAB_C) {
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			rotaryPin = 0;
+			buttonPin = 4;
+			buzzerPin = 5;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			rotaryPin = 0 + 512;
+			buttonPin = 4 + 512;
+			buzzerPin = 5 + 512;
+		} else {
 			System.err.println("Unsupported platform, exiting");
 			return;
 		}

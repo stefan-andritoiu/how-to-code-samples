@@ -7,6 +7,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.HttpClients;
 
+import mraa.Platform;
+import mraa.mraa;
 import upm_buzzer.Buzzer;
 import upm_i2clcd.*;
 import upm_ttp223.TTP223;
@@ -17,6 +19,8 @@ public class Doorbell {
 	static short[] colour_green = { 0, 255, 0 };
 
 	static boolean done = false;
+
+	private static int screenBus = 0, touchPin = 0, buzzerPin = 0;
 
 	private static Jhd1313m1 lcd = null;
 	private static Buzzer buzzer = null;
@@ -92,9 +96,26 @@ public class Doorbell {
 					.println("Provide configuration as parameters: <server> <auth>");
 		}
 
-		lcd = new Jhd1313m1(0);
-		buzzer = new Buzzer(5);
-		touch = new TTP223(4);
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			touchPin = 4;
+			buzzerPin = 5;
+
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			touchPin = 4 + 512;
+			buzzerPin = 5 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
+		lcd = new Jhd1313m1(screenBus);
+		buzzer = new Buzzer(buzzerPin);
+		touch = new TTP223(touchPin);
 		lcd.displayOn();
 		lcd.clear();
 

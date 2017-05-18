@@ -6,6 +6,8 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import mraa.Platform;
+import mraa.mraa;
 import upm_ldt0028.LDT0028;
 import upm_mic.Microphone;
 
@@ -18,9 +20,26 @@ public class EquipmentActivityMonitor {
 	private static int noiseThreshold;
 	private static int vibrationThreshold;
 	private static boolean isNotificationInProgress = false;
+	private static int screenBus = 0, micPin = 0, vibePin = 0;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			micPin = 0;
+			vibePin = 0;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			micPin = 0 + 512;
+			vibePin = 0 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
 		loadConfigurationFile();
 		initiateSensors();
 		monitorEquipment();
@@ -49,9 +68,9 @@ public class EquipmentActivityMonitor {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		lcdScreen = new LcdScreen();
-		vibrationSensor = new LDT0028(0);
-		soundSensor = new Microphone(0);
+		lcdScreen = new LcdScreen(screenBus);
+		vibrationSensor = new LDT0028(vibePin);
+		soundSensor = new Microphone(micPin);
 	}
 
 	/**

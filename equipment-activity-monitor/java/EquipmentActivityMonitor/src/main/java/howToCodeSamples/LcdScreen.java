@@ -8,12 +8,12 @@ public class LcdScreen {
 	// Colors used for the RGB LCD
 	private static final short[] redColor = {255, 0, 0}; 
 	private static final short[] whiteColor = {255, 255, 255}; 
-	
-	public LcdScreen() {
-		lcdScreen = new Jhd1313m1(1, 0x3E, 0x62);
-		displayMessageOnLcd("",1);
+
+	public LcdScreen(int bus) {
+		lcdScreen = new Jhd1313m1(bus, 0x3E, 0x62);
+		displayMessageOnLcd("", 1);
 	}
-	
+
 	// Sets the background color on the RGB LCD
 	/**
 	 * @param colorString color for the LCD background

@@ -8,9 +8,12 @@ import java.util.TimerTask;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import mraa.Platform;
+import mraa.mraa;
+
 public class ColorMatchGame {
 
-	private static LcdScreen lcdScreen = new LcdScreen();
+	private static LcdScreen lcdScreen;
 	private static ArrayList<String> colorSequence = new ArrayList<String>();
 	private static int checkedIndex = 0;
 	private static int lastColorNum = 1;
@@ -19,8 +22,22 @@ public class ColorMatchGame {
 	public static final String GREEN = "green";
 	public static final String YELLOW = "yellow";
 	public static final String WHITE = "white";
+	public static int lcdBus = 0;
 
 	public static void main(String[] args) {
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			lcdBus = 0;
+		} else if (platform == Platform.INTEL_DE3815) {
+			lcdBus = 0 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
+		lcdScreen = new LcdScreen(lcdBus);
 		lcdScreen.setLcdColor("white");
 		setupServer();
 	}

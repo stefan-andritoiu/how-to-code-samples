@@ -6,6 +6,8 @@ import java.util.Properties;
 
 import org.joda.time.DateTime;
 
+import mraa.Platform;
+import mraa.mraa;
 import upm_uln200xa.ULN200XA;
 import upm_uln200xa.ULN200XA_DIRECTION_T;
 
@@ -17,8 +19,35 @@ public class LineFollowingRobot {
 	private static upm_grovelinefinder.GroveLineFinder lineFinder;
 	private static final int CLOCKWISE = 1;
 	private static final int COUNTER_CLOCKWISE = 2;
+	private static int linePin = 2,
+		      stepLeftInputPin1 = 9,
+		      stepLeftInputPin2 = 10,
+		      stepLeftInputPin3 = 11,
+		      stepLeftInputPin4 = 12,
+		      stepRightInputPin1 = 4,
+		      stepRightInputPin2 = 5,
+		      stepRightInputPin3 = 6,
+		      stepRightInputPin4 = 7;
 
 	public static void main(String[] args) {
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+		} else if (platform == Platform.INTEL_DE3815) {
+			linePin += 512;
+			stepLeftInputPin1 += 512;
+			stepLeftInputPin2 += 512;
+			stepLeftInputPin3 += 512;
+			stepLeftInputPin4 += 512;
+			stepRightInputPin1 += 512;
+			stepRightInputPin2 += 512;
+			stepRightInputPin3 += 512;
+			stepRightInputPin4 += 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
 		// TODO Auto-generated method stub
 		initiateSensors();
 		loadConfigurationFile();
@@ -77,9 +106,9 @@ public class LineFollowingRobot {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		leftMotor = new ULN200XA(4096, 9, 10, 11, 12);
-		rightMotor = new ULN200XA(4096, 4, 5, 6, 7);
-		lineFinder = new upm_grovelinefinder.GroveLineFinder(2);
+		leftMotor = new ULN200XA(4096, stepLeftInputPin1, stepLeftInputPin2, stepLeftInputPin3, stepLeftInputPin4);
+		rightMotor = new ULN200XA(4096, stepRightInputPin1, stepRightInputPin2, stepRightInputPin3, stepRightInputPin4);
+		lineFinder = new upm_grovelinefinder.GroveLineFinder(linePin);
 	}
 
 	/**

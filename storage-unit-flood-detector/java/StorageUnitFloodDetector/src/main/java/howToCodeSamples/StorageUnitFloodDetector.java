@@ -5,6 +5,8 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import mraa.Platform;
+import mraa.mraa;
 import upm_grovemoisture.GroveMoisture;
 import upm_grovespeaker.GroveSpeaker;
 
@@ -25,13 +27,14 @@ public class StorageUnitFloodDetector {
     private static upm_grovespeaker.GroveSpeaker speakerSensor;
     private static upm_grovemoisture.GroveMoisture moistureSensor;
     private static int prev = 0;
+    private static int speakerPin = 0, moistPin = 0;
 
     /**
      * Initializes sensors
      */
     private static void initSensors(){
-	speakerSensor = new GroveSpeaker(5);
-	moistureSensor = new GroveMoisture(0);
+	speakerSensor = new GroveSpeaker(speakerPin);
+	moistureSensor = new GroveMoisture(moistPin);
     }
 
     /**
@@ -86,12 +89,25 @@ public class StorageUnitFloodDetector {
      * indicating a possible flood.
      * If so, it calls the `alertHighMoisture()` function.
      */
-    public static void main(String[] args) {
-	System.out.println("Starting main");
-	loadConfigFile();
-	initSensors();
-	checkStorageUnitFlood();
-    }
+	public static void main(String[] args) {
+		System.out.println("Starting main");
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			speakerPin = 5;
+			moistPin = 0;
+		} else if (platform == Platform.INTEL_DE3815) {
+			speakerPin = 5 + 512;
+			moistPin = 0 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+		loadConfigFile();
+		initSensors();
+		checkStorageUnitFlood();
+	}
 
    
 

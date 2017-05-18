@@ -6,6 +6,8 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import mraa.Platform;
+import mraa.mraa;
 import upm_grove.GroveTemp;
 
 public class FireAlarm {
@@ -20,9 +22,26 @@ public class FireAlarm {
 	private static boolean alarmTick = true;
 	private static boolean isAlertOn = false;
 	private static Properties config = new Properties();
+	private static int screenBus = 0, tempPin = 0, buzzerPin = 0;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			tempPin = 0;
+			buzzerPin = 5;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			tempPin = 0 + 512;
+			buzzerPin = 5 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
 		loadConfigurationFile();
 		initiateSensors();
 		listenToTemperatureChanges();
@@ -66,9 +85,9 @@ public class FireAlarm {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		lcdScreen = new AlarmLcd();
-		buzzer = new AlarmBuzzer(5);
-		temperatureSensor = new GroveTemp(0);
+		lcdScreen = new AlarmLcd(screenBus);
+		buzzer = new AlarmBuzzer(buzzerPin);
+		temperatureSensor = new GroveTemp(tempPin);
 	}
 
 	/**

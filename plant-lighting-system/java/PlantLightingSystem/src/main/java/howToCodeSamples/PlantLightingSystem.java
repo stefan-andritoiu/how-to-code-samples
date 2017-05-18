@@ -34,6 +34,7 @@ public class PlantLightingSystem {
 	private static HashMap<Integer,Boolean> schedule;
 	private static Properties config = new Properties();
 	private static boolean shouldLightBeCurrentlyOn = false;
+	private static int screenBus = 0, lightPin = 0, moistPin = 0;
 
 	static {
 		try {
@@ -171,9 +172,9 @@ public class PlantLightingSystem {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		lcdController = new LCDController(0);
-		lightController = new LightController(0);
-		moistureController = new MoistureController(1);
+		lcdController = new LCDController(screenBus);
+		lightController = new LightController(lightPin);
+		moistureController = new MoistureController(moistPin);
 		moistureController.getCurrentMoistureValue();
 
 	}
@@ -272,11 +273,19 @@ public class PlantLightingSystem {
 	}
 
 	public static void main(String[] args) {
-
 		Platform platform = mraa.getPlatformType();
-		if (platform != Platform.INTEL_GALILEO_GEN1 &&
-				platform != Platform.INTEL_GALILEO_GEN2 &&
-				platform != Platform.INTEL_EDISON_FAB_C) {
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			lightPin = 0;
+			moistPin = 1;
+
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			lightPin = 0 + 512;
+			moistPin = 1 + 512;
+		} else {
 			System.err.println("Unsupported platform, exiting");
 			return;
 		}

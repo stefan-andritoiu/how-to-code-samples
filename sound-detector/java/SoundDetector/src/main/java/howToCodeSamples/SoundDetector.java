@@ -3,6 +3,9 @@ package howToCodeSamples;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import mraa.Platform;
+import mraa.mraa;
+
 /**
  * 
  * @author rhassidi
@@ -12,6 +15,7 @@ public class SoundDetector {
 
     private static upm_mic.Microphone mic;
     private static upm_i2clcd.Jhd1313m1 rgbLcd;
+    private static int screenBus = 0, micPin = 0;
     
     private static final short WHITE[] = {0,0,0};
     private static final short YELLOW[] = {255,255,0};
@@ -25,10 +29,10 @@ public class SoundDetector {
     /**
      * Initializes the lcd and microphone sensors
      */
-    private static void initSensors(){
-	rgbLcd = new upm_i2clcd.Jhd1313m1(6);
-	mic = new upm_mic.Microphone(0);
-    }
+	private static void initSensors() {
+		rgbLcd = new upm_i2clcd.Jhd1313m1(screenBus);
+		mic = new upm_mic.Microphone(micPin);
+	}
 
     /**
      * Displays the current average volume on the lcd screen and colors the screen 
@@ -61,23 +65,34 @@ public class SoundDetector {
      * and writes the results to the lcd screen and to azure
      */
     public static void main(String[] args) {
-	initSensors();
-	Utils.loadConfig();
-
-	
-	Timer timer = new Timer();
-	timer.schedule(new TimerTask(){
-	    public void run(){
-		int len = mic.getSampledWindow(2, buffer);
-		int averageVolume = 0;
-		for(int i : buffer){
-		    averageVolume += i;
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			micPin = 2;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			micPin = 2 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
 		}
-		averageVolume /= len;
-//		System.out.println("decibel val = "+ average);
-		write(averageVolume);
-	    }
-	}, 1000, 1000);
+		initSensors();
+		Utils.loadConfig();
 
-    }
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			public void run() {
+				int len = mic.getSampledWindow(2, buffer);
+				int averageVolume = 0;
+				for (int i : buffer) {
+					averageVolume += i;
+				}
+				averageVolume /= len;
+				// System.out.println("decibel val = "+ average);
+				write(averageVolume);
+			}
+		}, 1000, 1000);
+	}
 }

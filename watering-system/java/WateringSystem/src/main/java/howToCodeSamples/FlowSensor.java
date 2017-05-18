@@ -10,10 +10,10 @@ import java.util.TimerTask;
  *
  */
 public class FlowSensor {
-	private  upm_grovewfs.GroveWFS flow ;
+	private upm_grovewfs.GroveWFS flow;
 
-	public FlowSensor(){
-		flow = new upm_grovewfs.GroveWFS(2);
+	public FlowSensor(int pin) {
+		flow = new upm_grovewfs.GroveWFS(pin);
 	}
 
 	/**

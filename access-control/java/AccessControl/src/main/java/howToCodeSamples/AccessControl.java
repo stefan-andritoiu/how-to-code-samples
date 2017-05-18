@@ -8,10 +8,14 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import mraa.Platform;
+import mraa.mraa;
+
 public class AccessControl {
 
     private static Properties config;
     private static MotionActivityHandling motionActivityHandling;   
+    private static int screenBus = 0, motionPin = 0;
 
 
     /**
@@ -19,7 +23,7 @@ public class AccessControl {
      * motion sensor instances
      */
     private static void initSensors() {
-	motionActivityHandling = new MotionActivityHandling();
+	motionActivityHandling = new MotionActivityHandling(screenBus, motionPin);
     }
 
     /**
@@ -81,11 +85,23 @@ public class AccessControl {
      * after triggering the alarm.
      * It also calls the `lookForMotion()` function which monitors
      */
-    public static void main(String[] args) {
-	loadConfigFile();
-	initSensors();
-	setupServer();
-	motionActivityHandling.lookForMotion();
-
+	public static void main(String[] args) {
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			motionPin = 4;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			motionPin = 4 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+		loadConfigFile();
+		initSensors();
+		setupServer();
+		motionActivityHandling.lookForMotion();
     }
 }
