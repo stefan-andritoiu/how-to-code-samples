@@ -1,14 +1,19 @@
 package howToCodeSamples;
 
 import java.io.IOException;
+import java.util.Date;
+import java.util.Properties;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.HttpClients;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 import upm_buzzer.Buzzer;
-import upm_i2clcd.*;
+import upm_jhd1313m1.*;
 import upm_ttp223.TTP223;
 
 public class Doorbell {
@@ -18,10 +23,14 @@ public class Doorbell {
 
 	static boolean done = false;
 
+	private static int screenBus = 0, touchPin = 0, buzzerPin = 0;
+
 	private static Jhd1313m1 lcd = null;
 	private static Buzzer buzzer = null;
 	private static TTP223 touch = null;
 
+	private static Properties config = new Properties();
+	
 	static class Dingdong implements Runnable {
 		public void run() {
 			if (touch.isPressed()) {
@@ -33,6 +42,7 @@ public class Doorbell {
 				synchronized (buzzer) {
 					buzzer.playSound(2600, 0);
 				}
+				notifyService();
 			} else {
 				reset();
 			}
@@ -92,16 +102,35 @@ public class Doorbell {
 					.println("Provide configuration as parameters: <server> <auth>");
 		}
 
-		lcd = new Jhd1313m1(0);
-		buzzer = new Buzzer(5);
-		touch = new TTP223(4);
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			touchPin = 4;
+			buzzerPin = 5;
+
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			touchPin = 4 + 512;
+			buzzerPin = 5 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
+		loadConfigurationFile();
+		Services.initServices(config);
+		lcd = new Jhd1313m1(screenBus);
+		buzzer = new Buzzer(buzzerPin);
+		touch = new TTP223(touchPin);
 		lcd.displayOn();
 		lcd.clear();
 
 		reset();
 
 		Dingdong dingdong = new Dingdong();
-		touch.installISR(mraa.Edge.EDGE_BOTH.swigValue(), dingdong);
+		touch.installISR(2, dingdong);
 		while (!done) {
 			try {
 				Thread.sleep(1000);
@@ -109,5 +138,24 @@ public class Doorbell {
 
 			}
 		}
+	}
+	
+	/**
+	 * load configuration file 
+	 */
+	private static void loadConfigurationFile() {
+		// TODO Auto-generated method stub
+		try {
+			// Load configuration data from `config.properties` file. Edit this file
+			// to change to correct values for your configuration
+			config.load(Doorbell.class.getClassLoader().getResourceAsStream("resources/config.properties"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void notifyService() {
+		String text = "{\"Doorbell pressed on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 }

@@ -3,6 +3,7 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -12,6 +13,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.JsonObject;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 import upm_grovespeaker.GroveSpeaker;
 import upm_yg1006.YG1006;
 
@@ -26,9 +30,29 @@ public class SmartStoveTop {
 	private static float previousTemperature;
 	private static boolean previousPresenceOfFire;
 
+	private static int speakerPin = 0, flamePin = 0, tempPin1 = 0, tempPin2 = 0;
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			speakerPin = 5;
+			flamePin = 4;
+			tempPin1 = 0;
+			tempPin2 = 1;
+		} else if (platform == Platform.INTEL_DE3815) {
+			speakerPin = 5 + 512;
+			flamePin = 4 + 512;
+			tempPin1 = 0 + 512;
+			tempPin2 = 1 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
 		loadConfigurationFile();
+		Services.initServices(config);
 		setupServer();
 		initiateSensors();
 		monitorHighTemperatureAndFire();
@@ -40,9 +64,9 @@ public class SmartStoveTop {
 	 * initiate all sensor objects
 	 */
 	private static void initiateSensors(){
-		temperatureSensor = new upm_otp538u.OTP538U(0, 1);
-		flameSensor = new YG1006(4);
-		speaker = new GroveSpeaker(5);
+		temperatureSensor = new upm_otp538u.OTP538U(tempPin1, tempPin2);
+		flameSensor = new YG1006(flamePin);
+		speaker = new GroveSpeaker(speakerPin);
 	}
 
 	/**
@@ -93,6 +117,7 @@ public class SmartStoveTop {
 		    speaker.playSound('g', true, "med");
 		    i++;
 		  }
+		  notifyService("Fire detected");
 	}
 
 
@@ -106,6 +131,8 @@ public class SmartStoveTop {
 		speaker.playSound('c', true, "low");
 		speaker.playSound('d', true, "low");
 		speaker.playSound('b', false, "low");
+		
+		notifyService("High temperature");
 	}
 
 
@@ -192,11 +219,16 @@ public class SmartStoveTop {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(SmartStoveTop.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(SmartStoveTop.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 			targetTemperature = Float.parseFloat(config.getProperty("TEMPERATURE_THRESHOLD"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 
 }

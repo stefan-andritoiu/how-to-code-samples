@@ -1,9 +1,14 @@
 package howToCodeSamples;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 
 /**
  * @author rhassidi
@@ -18,13 +23,14 @@ public class EarthquakeDetector {
     private static boolean prev;
     private static boolean quake; 
     static int i = 0;
+    static int screenBus = 0, accelPin = 0;
 
     /**
      * Initializing 3-axis and lcd sensors
      */
     private static void initSensors(){
-	accelerometer = new AccelerometerSensor(2);
-	lcd = new LcdSensor(6, config);
+	accelerometer = new AccelerometerSensor(accelPin);
+	lcd = new LcdSensor(screenBus, config);
     }
 
 
@@ -33,7 +39,7 @@ public class EarthquakeDetector {
      */
     private static void loadConfig(){
 	try {
-	    config.load(EarthquakeDetector.class.getClassLoader().getResourceAsStream("config.properties"));
+	    config.load(EarthquakeDetector.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
 	}
@@ -102,6 +108,11 @@ public class EarthquakeDetector {
 	}, 100, 100);
 
     }
+    
+    public static void notifyService(String message) {
+		String text = "{\""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
     /**
      *  Main function 
@@ -110,13 +121,27 @@ public class EarthquakeDetector {
      *  an earthquake has actually occurred, and displays info on the display
      */
     public static void main(String[] args) {
-	prev = false;
+		prev = false;
 
-	loadConfig();
-	initSensors();
-	checkQuake();
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 6;
+			accelPin = 2;
 
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 6 + 512;
+			accelPin = 2 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
 
+		loadConfig();
+		Services.initServices(config);
+		initSensors();
+		checkQuake();
     }
 
 }

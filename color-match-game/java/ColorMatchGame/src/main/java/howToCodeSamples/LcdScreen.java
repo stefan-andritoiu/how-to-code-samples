@@ -1,6 +1,6 @@
 package howToCodeSamples;
 
-import upm_i2clcd.Jhd1313m1;
+import upm_jhd1313m1.*;
 
 
 public class LcdScreen {
@@ -17,12 +17,12 @@ public class LcdScreen {
 	public static final String GREEN = "green";
 	public static final String YELLOW = "yellow";
 	public static final String WHITE = "white";
-	
-	public LcdScreen() {
-		lcdScreen = new Jhd1313m1(1, 0x3E, 0x62);
-		displayMessageOnLcd("",1);
+
+	public LcdScreen(int bus) {
+		lcdScreen = new Jhd1313m1(bus);
+		displayMessageOnLcd("", 1);
 	}
-	
+
 	// Sets the background color on the RGB LCD
 	/**
 	 * @param colorString color for the LCD background

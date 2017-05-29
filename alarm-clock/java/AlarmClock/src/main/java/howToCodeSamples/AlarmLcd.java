@@ -1,6 +1,6 @@
 package howToCodeSamples;
 
-import upm_i2clcd.Jhd1313m1;
+import upm_jhd1313m1.*;
 
 
 public class AlarmLcd {
@@ -9,8 +9,8 @@ public class AlarmLcd {
 	private static final short[] redColor = {255, 0, 0}; 
 	private static final short[] whiteColor = {255, 255, 255}; 
 	
-	public AlarmLcd() {
-		lcdScreen = new Jhd1313m1(1, 0x3E, 0x62);
+	public AlarmLcd(int bus) {
+		lcdScreen = new Jhd1313m1(bus);
 	}
 	
 	// Sets the background color on the RGB LCD

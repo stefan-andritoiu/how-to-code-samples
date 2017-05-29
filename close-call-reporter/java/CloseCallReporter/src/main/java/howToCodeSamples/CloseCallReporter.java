@@ -6,6 +6,9 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 import upm_rfr359f.RFR359F;
 import upm_nmea_gps.NMEAGPS;
 
@@ -16,14 +19,30 @@ public class CloseCallReporter {
 	private static boolean wasObjectDetectedLastTime = false;
 	private static String parsedGPSData ="gps not available yet";
 	private static Properties config = new Properties();
+	private static int gpsBus = 0, interrupterPin = 0;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			gpsBus = 0;
+			interrupterPin = 2;
+
+		} else if (platform == Platform.INTEL_DE3815) {
+			gpsBus = 0 + 512;
+			interrupterPin = 2 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
 
 		try{
 			loadConfigurationFile();
-			setupGPS();
-			setupDistanceInterrupter();
+			Services.initServices(config);
+			setupGPS(gpsBus);
+			setupDistanceInterrupter(interrupterPin);
 			listenToGPSSync();
 
 		}
@@ -41,27 +60,33 @@ public class CloseCallReporter {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(CloseCallReporter.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(CloseCallReporter.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+	
+	private static void notifyService() {
+		String text = "{\"Object detected\" \"location\": " + parsedGPSData + " on " + new Date().toString()
+				+ "\"}";
+		Services.logService(text);
+	}
 
 	/**
 	 * instantiate distance interrupter sensor
 	 */
-	private static void setupDistanceInterrupter() {
+	private static void setupDistanceInterrupter(int pin) {
 		// TODO Auto-generated method stub
-		distanceInterrupter = new RFR359F(2);
+		distanceInterrupter = new RFR359F(pin);
 	}
 
 	/**
 	 * instantiate GPS sensor
 	 */
-	private static void setupGPS(){
+	private static void setupGPS(int gpsBus){
 		// TODO Auto-generated method stub
-		gps = new NMEAGPS(0, 9600, 3);
+		gps = new NMEAGPS(gpsBus, 9600, -1);
 	}
 
 	/**
@@ -132,6 +157,7 @@ public class CloseCallReporter {
 				if(objectDetected & !wasObjectDetectedLastTime){
 					System.out.println("object detected");
 					Utils.notifyAzure(new Date().toString() + " " + parsedGPSData, config);
+					notifyService();
 				}
 				wasObjectDetectedLastTime = objectDetected;
 			}

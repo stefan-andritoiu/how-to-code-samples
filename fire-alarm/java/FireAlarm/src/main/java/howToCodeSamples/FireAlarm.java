@@ -6,6 +6,9 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 import upm_grove.GroveTemp;
 
 public class FireAlarm {
@@ -20,10 +23,28 @@ public class FireAlarm {
 	private static boolean alarmTick = true;
 	private static boolean isAlertOn = false;
 	private static Properties config = new Properties();
+	private static int screenBus = 0, tempPin = 0, buzzerPin = 0;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			tempPin = 0;
+			buzzerPin = 5;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			tempPin = 0 + 512;
+			buzzerPin = 5 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
 		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		listenToTemperatureChanges();
 	}
@@ -37,7 +58,7 @@ public class FireAlarm {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(FireAlarm.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(FireAlarm.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 			temperatureThreshold =Integer.parseInt(config.getProperty("TEMPERATURE_THRESHOLD"));
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -66,9 +87,9 @@ public class FireAlarm {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		lcdScreen = new AlarmLcd();
-		buzzer = new AlarmBuzzer(5);
-		temperatureSensor = new GroveTemp(0);
+		lcdScreen = new AlarmLcd(screenBus);
+		buzzer = new AlarmBuzzer(buzzerPin);
+		temperatureSensor = new GroveTemp(tempPin);
 	}
 
 	/**
@@ -106,7 +127,7 @@ public class FireAlarm {
 		// TODO Auto-generated method stub
 		Utils.sendMessageWithTwilio("fire alarm", config);
 		Utils.notifyAzure((new Date().toString()), config);
-
+		notifyService("Fire alarm!");
 		System.out.println("fire!");
 		isAlertOn = true;
 		lcdScreen.displayMessageOnLcd("fire detected", 1);
@@ -134,7 +155,13 @@ public class FireAlarm {
 		lcdScreen.displayMessageOnLcd("fire stopped", 1);
 		lcdScreen.setLcdColor("white");
 		buzzer.stopBuzzing();
+		notifyService("Fire stopped");
 		FireTimer.cancel();
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 
 }

@@ -1,10 +1,14 @@
 package howToCodeSamples;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 import upm_grovemoisture.GroveMoisture;
 import upm_grovespeaker.GroveSpeaker;
 
@@ -25,13 +29,14 @@ public class StorageUnitFloodDetector {
     private static upm_grovespeaker.GroveSpeaker speakerSensor;
     private static upm_grovemoisture.GroveMoisture moistureSensor;
     private static int prev = 0;
+    private static int speakerPin = 0, moistPin = 0;
 
     /**
      * Initializes sensors
      */
     private static void initSensors(){
-	speakerSensor = new GroveSpeaker(5);
-	moistureSensor = new GroveMoisture(0);
+	speakerSensor = new GroveSpeaker(speakerPin);
+	moistureSensor = new GroveMoisture(moistPin);
     }
 
     /**
@@ -48,6 +53,7 @@ public class StorageUnitFloodDetector {
      */
     public static void alertHighMoisture(){
 	Utils.NotifyAzure(config);
+	notifyService("High moisture");
 	chime();
     }
 
@@ -74,11 +80,16 @@ public class StorageUnitFloodDetector {
      */
     private static void loadConfigFile() {
 	try {
-	    config.load(StorageUnitFloodDetector.class.getClassLoader().getResourceAsStream("config.properties"));
+	    config.load(StorageUnitFloodDetector.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
     }
+    
+    private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
     
     /**
      * The main function monitors the connected hardware every 1
@@ -86,12 +97,26 @@ public class StorageUnitFloodDetector {
      * indicating a possible flood.
      * If so, it calls the `alertHighMoisture()` function.
      */
-    public static void main(String[] args) {
-	System.out.println("Starting main");
-	loadConfigFile();
-	initSensors();
-	checkStorageUnitFlood();
-    }
+	public static void main(String[] args) {
+		System.out.println("Starting main");
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			speakerPin = 5;
+			moistPin = 0;
+		} else if (platform == Platform.INTEL_DE3815) {
+			speakerPin = 5 + 512;
+			moistPin = 0 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+		loadConfigFile();
+		Services.initServices(config);
+		initSensors();
+		checkStorageUnitFlood();
+	}
 
    
 

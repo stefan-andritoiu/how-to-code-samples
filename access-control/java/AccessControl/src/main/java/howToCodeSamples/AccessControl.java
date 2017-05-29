@@ -3,23 +3,28 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
+
 public class AccessControl {
 
     private static Properties config;
     private static MotionActivityHandling motionActivityHandling;   
-
+    private static int screenBus = 0, motionPin = 0;
 
     /**
      * Initializes motion activity handling object that constructs the lcd and the 
      * motion sensor instances
      */
     private static void initSensors() {
-	motionActivityHandling = new MotionActivityHandling();
+	motionActivityHandling = new MotionActivityHandling(screenBus, motionPin);
     }
 
     /**
@@ -74,6 +79,11 @@ public class AccessControl {
 
 	server.run();
     }
+    
+    public static void notifyService(String message) {
+    	String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
     /**
      *  The main function calls `server()` to start up
@@ -81,11 +91,24 @@ public class AccessControl {
      * after triggering the alarm.
      * It also calls the `lookForMotion()` function which monitors
      */
-    public static void main(String[] args) {
-	loadConfigFile();
-	initSensors();
-	setupServer();
-	motionActivityHandling.lookForMotion();
-
+	public static void main(String[] args) {
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			motionPin = 4;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			motionPin = 4 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+		loadConfigFile();
+		Services.initServices(config);	
+		initSensors();
+		setupServer();
+		motionActivityHandling.lookForMotion();
     }
 }

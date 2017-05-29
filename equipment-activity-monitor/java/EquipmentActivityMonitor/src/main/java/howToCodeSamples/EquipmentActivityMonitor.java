@@ -6,6 +6,9 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
+import mraa.Platform;
+import mraa.mraa;
 import upm_ldt0028.LDT0028;
 import upm_mic.Microphone;
 
@@ -18,10 +21,28 @@ public class EquipmentActivityMonitor {
 	private static int noiseThreshold;
 	private static int vibrationThreshold;
 	private static boolean isNotificationInProgress = false;
+	private static int screenBus = 0, micPin = 0, vibePin = 0;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		Platform platform = mraa.getPlatformType();
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			micPin = 0;
+			vibePin = 0;
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			micPin = 0 + 512;
+			vibePin = 0 + 512;
+		} else {
+			System.err.println("Unsupported platform, exiting");
+			return;
+		}
+
 		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		monitorEquipment();
 	}
@@ -35,7 +56,7 @@ public class EquipmentActivityMonitor {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(EquipmentActivityMonitor.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(EquipmentActivityMonitor.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 			noiseThreshold =Integer.parseInt(config.getProperty("NOISE_THRESHOLD"));
 			vibrationThreshold =Integer.parseInt(config.getProperty("VIBRATION_THRESHOLD"));
 		} catch (IOException e) {
@@ -49,9 +70,9 @@ public class EquipmentActivityMonitor {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		lcdScreen = new LcdScreen();
-		vibrationSensor = new LDT0028(0);
-		soundSensor = new Microphone(0);
+		lcdScreen = new LcdScreen(screenBus);
+		vibrationSensor = new LDT0028(vibePin);
+		soundSensor = new Microphone(micPin);
 	}
 
 	/**
@@ -100,6 +121,7 @@ public class EquipmentActivityMonitor {
 	private static void alertEquipmentMoved() {
 		// TODO Auto-generated method stub
 		Utils.notifyAzure(("start " + new Date().toString()), config);
+		notifyService("Started");
 		System.out.println("equipment moved!");
 
 		lcdScreen.displayMessageOnLcd("EQUIPMENT IN USE", 0);
@@ -112,8 +134,13 @@ public class EquipmentActivityMonitor {
 	private static void stopAlert() {
 		// TODO Auto-generated method stub
 		Utils.notifyAzure(("stop " + new Date().toString()), config);
+		notifyService("Stopped");
 		System.out.println("equipment stopped moving!");
 		lcdScreen.clearLCDScreen();
 	}
-
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 }

@@ -3,6 +3,7 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Map;
@@ -23,6 +24,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import howToCodeSamples.services.Services;
+
 public class PlantLightingSystem {
 
 	private static final String LIGHTS_ON = "on";
@@ -34,6 +37,7 @@ public class PlantLightingSystem {
 	private static HashMap<Integer,Boolean> schedule;
 	private static Properties config = new Properties();
 	private static boolean shouldLightBeCurrentlyOn = false;
+	private static int screenBus = 0, lightPin = 0, moistPin = 0;
 
 	static {
 		try {
@@ -127,6 +131,7 @@ public class PlantLightingSystem {
 		shouldLightBeCurrentlyOn = true;
 		lcdController.displayMessageOnLcd("on", 0);
 		Utils.notifyAzure("on", config);
+		notifyService("on");
 	}
 	
 	/**
@@ -139,6 +144,7 @@ public class PlantLightingSystem {
 		shouldLightBeCurrentlyOn = false;
 		lcdController.displayMessageOnLcd("off", 0);
 		Utils.notifyAzure("off", config);
+		notifyService("off");
 	}
 
 	/**
@@ -171,9 +177,9 @@ public class PlantLightingSystem {
 	 */
 	private static void initiateSensors() {
 		// TODO Auto-generated method stub
-		lcdController = new LCDController(0);
-		lightController = new LightController(0);
-		moistureController = new MoistureController(1);
+		lcdController = new LCDController(screenBus);
+		lightController = new LightController(lightPin);
+		moistureController = new MoistureController(moistPin);
 		moistureController.getCurrentMoistureValue();
 
 	}
@@ -218,6 +224,7 @@ public class PlantLightingSystem {
 				int moistureValue = moistureController.getCurrentMoistureValue();
 				lcdController.displayMessageOnLcd("moisture (" + moistureValue + ")", 0); 
 				Utils.notifyAzure(Integer.toString(moistureValue), config);
+				notifyService("Moisture: " + Integer.toString(moistureValue));
 
 			}
 		}, 0, 30*1000);
@@ -242,6 +249,7 @@ public class PlantLightingSystem {
 					System.out.println("alerting");
 					lcdController.displayMessageOnLcd("Lighting alert",0);
 					Utils.sendMessageWithTwilio("Lighting alert", config);
+					notifyService("Lighting alert");
 				}
 			}
 		};
@@ -270,23 +278,37 @@ public class PlantLightingSystem {
 		return httpJson.toString();
 
 	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
 	public static void main(String[] args) {
-
 		Platform platform = mraa.getPlatformType();
-		if (platform != Platform.INTEL_GALILEO_GEN1 &&
-				platform != Platform.INTEL_GALILEO_GEN2 &&
-				platform != Platform.INTEL_EDISON_FAB_C) {
+		if (platform == Platform.INTEL_GALILEO_GEN1
+				|| platform == Platform.INTEL_GALILEO_GEN2
+				|| platform == Platform.INTEL_EDISON_FAB_C) {
+			screenBus = 0;
+			lightPin = 0;
+			moistPin = 1;
+
+		} else if (platform == Platform.INTEL_DE3815) {
+			screenBus = 0 + 512;
+			lightPin = 0 + 512;
+			moistPin = 1 + 512;
+		} else {
 			System.err.println("Unsupported platform, exiting");
 			return;
 		}
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(PlantLightingSystem.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(PlantLightingSystem.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		Services.initServices(config);
 		initiateSensors();
 		initiateSchedule();
 		initiateLightChecks();

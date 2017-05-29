@@ -52,16 +52,16 @@ Open Intel® System Studio IoT Edition. It will start by asking for a workspace 
 
 In Intel® System Studio IoT Edition, select File -> new -> **Intel(R) IoT Java Project**:
 
-![](./../../images/java/new project.png)
+![](./../../images/java/new_project.png)
 
 Give the project the name "RangeFinderScanner" and then click Next.
 
-![](./../../images/java/project name.png)
+![](./../../images/java/project_name.png)
 
 You now need to connect to your Intel® Edison board from your computer to send code to it.
 Choose a name for the connection and enter the IP address of the Intel® Edison board in the "Target Name" field. You can also try to Search for it using the "Search Target" button. Click finish when you are done.
 
-![](./../../images/java/Target connection.png)
+![](./../../images/java/Target_connection.png)
 
 You have successfully created an empty project. You now need to copy the source files and the config file to the project.
 Drag all of the files from your git repository's "src" folder into the new project's src folder in Intel® System Studio IoT Edition. Make sure previously auto-generated main class is overridden.
@@ -69,7 +69,7 @@ Drag all of the files from your git repository's "src" folder into the new proje
 The project uses the following external jars: [gson-2.6.1](http://central.maven.org/maven2/com/google/code/gson/gson/2.6.1/gson-2.6.1.jar), [jetty-all-9.3.7.v20160115-uber](http://repo1.maven.org/maven2/org/eclipse/jetty/aggregate/jetty-all/9.3.7.v20160115/jetty-all-9.3.7.v20160115-uber.jar). These can be found in the Maven Central Repository. Create a "jars" folder in the project's root directory, and copy all needed jars in this folder.
 In Intel® System Studio IoT Edition, select all jar files in "jars" folder and  right click -> Build path -> Add to build path
 
-![](./../../images/java/add to build path.png)
+![](./../../images/java/add_to_build_path.png)
 
 Now you need to add the UPM jar files relevant to this specific sample.
 
@@ -82,7 +82,7 @@ For this sample you will need the following jars:
 
 The jars can be found at the IOT Devkit installation root path\iss-iot-win\devkit-x86\sysroots\i586-poky-linux\usr\lib\java
 
-![](./../../images/java/add external jars to build path.png)
+![](./../../images/java/add_external_jars_to_build_path.png)
 
 ### Connecting the Grove* sensors
 
@@ -112,11 +112,11 @@ When you're ready to run the example, make sure you have saved all the files.
 
 Click the **Run** icon on the toolbar of Intel® System Studio IoT Edition. This runs the code on the Intel® Edison board.
 
-![](./../../images/java/run project.png)
+![](./../../images/java/run_project.png)
 
 You will see output similar to the following when the program is running.
 
-![](./../../images/java/looks when running.png)
+![](./../../images/java/looks_when_running.png)
 
 ### Viewing the range data
 
@@ -125,6 +125,43 @@ You will see output similar to the following when the program is running.
 The schedule for the lighting system is set using a single-page web interface served from the Intel® Edison board while the sample program is running.
 
 The web server runs on port `8080`, so if the Intel® Edison board is connected to Wi-Fi* on `192.168.1.13`, the address to browse to if you are on the same network is `http://192.168.1.13:8080`.
+
+## Running the program from the command line
+
+This can be easily achieved with basic Maven commands. For this to work you will need to have Maven installed, a guide can be found on the Maven website: <a href="https://maven.apache.org/install.html">https://maven.apache.org/install.html</a>
+
+### Compiling on host machine and deploying to Intel® Edison board
+
+If you want to compile the project on your local PC and then deploy it to the target you need to run `mvn package` at the location where the `pom.xml` file exists, or you can specify the file location using the `-f` parameter:
+
+	$ mvn package -f <path_to_pom_file>
+
+This will compile the source files and pack them in `.jar` archives. It will create a folder called `target` where you will find two jars, `RangeFinderScanner-1.0-SNAPSHOT.jar` and `RangeFinderScanner-1.0-SNAPSHOT-shaded.jar`. The first one contains only the classes from the current module, while the `shaded` version contains the classes from the current module and its dependencies, so running the program using the second jar will be easier since you don't have to worry about adding all the dependency jars to the classpath.
+
+Next step is to copy the generated jar on the target using `scp`. The following command will copy the file to the `home` folder of user `root` on the Intel® Edison board:
+
+	$ scp target/RangeFinderScanner-1.0-SNAPSHOT-shaded.jar root@<target_ip>:
+
+Then log in on the target using ssh:
+
+	$ ssh root@<target_ip>
+
+Next step is to run the program using `java`, providing the path to the copied jar file and the name of the `main` class:
+
+	# java -cp RangeFinderScanner-1.0-SNAPSHOT-shaded.jar howToCodeSamples.RangeFinderScanner
+
+### Running the program direcly on the Intel® Edison board
+
+If you have copied the source files from Git directly on the board and already installed Maven, then you can compile and run the program direcly onto the target.
+Log in to the board using ssh and navigate to the location of the `pom.xml` file.
+
+First you will need to compile the source files:
+
+	# mvn compile
+
+Then you can execute the program. The following command will run the `main` file in a separate Java process:
+
+	# mvn exec:exec 
 
 ### Determining the IP address of the Intel® Edison board
 

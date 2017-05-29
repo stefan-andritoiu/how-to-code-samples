@@ -10,8 +10,8 @@ import mraa.Gpio;
 public class WaterPump {
 	private Gpio pump;
 
-	public WaterPump(){
-		pump = new Gpio(4);
+	public WaterPump(int pin) {
+		pump = new Gpio(pin);
 	}
 
 	/**
