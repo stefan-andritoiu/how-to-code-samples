@@ -1,10 +1,12 @@
 package howToCodeSamples;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_grovemoisture.GroveMoisture;
@@ -51,6 +53,7 @@ public class StorageUnitFloodDetector {
      */
     public static void alertHighMoisture(){
 	Utils.NotifyAzure(config);
+	notifyService("High moisture");
 	chime();
     }
 
@@ -77,11 +80,16 @@ public class StorageUnitFloodDetector {
      */
     private static void loadConfigFile() {
 	try {
-	    config.load(StorageUnitFloodDetector.class.getClassLoader().getResourceAsStream("config.properties"));
+	    config.load(StorageUnitFloodDetector.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
     }
+    
+    private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
     
     /**
      * The main function monitors the connected hardware every 1
@@ -105,6 +113,7 @@ public class StorageUnitFloodDetector {
 			return;
 		}
 		loadConfigFile();
+		Services.initServices(config);
 		initSensors();
 		checkStorageUnitFlood();
 	}

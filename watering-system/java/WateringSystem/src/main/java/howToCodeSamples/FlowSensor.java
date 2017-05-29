@@ -33,9 +33,11 @@ public class FlowSensor {
 				// TODO Auto-generated method stub
 				if(flow.flowRate() >= 0.5 &&  !shouldWaterPumpBeOn){ //pump should be off but there is flow
 					Utils.sendMessageWithTwilio("watering system alarm", config);
+					WateringSystem.notifyService("Watering system alarm");
 				}
 				else if(flow.flowRate() < 1 &&  shouldWaterPumpBeOn){ //pump should be on but there is no flow
 					Utils.sendMessageWithTwilio("watering system alarm", config);
+					WateringSystem.notifyService("Watering system alarm");
 				}
 
 			}

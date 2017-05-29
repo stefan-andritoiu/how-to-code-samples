@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_ldt0028.LDT0028;
@@ -41,6 +42,7 @@ public class EquipmentActivityMonitor {
 		}
 
 		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		monitorEquipment();
 	}
@@ -54,7 +56,7 @@ public class EquipmentActivityMonitor {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(EquipmentActivityMonitor.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(EquipmentActivityMonitor.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 			noiseThreshold =Integer.parseInt(config.getProperty("NOISE_THRESHOLD"));
 			vibrationThreshold =Integer.parseInt(config.getProperty("VIBRATION_THRESHOLD"));
 		} catch (IOException e) {
@@ -119,6 +121,7 @@ public class EquipmentActivityMonitor {
 	private static void alertEquipmentMoved() {
 		// TODO Auto-generated method stub
 		Utils.notifyAzure(("start " + new Date().toString()), config);
+		notifyService("Started");
 		System.out.println("equipment moved!");
 
 		lcdScreen.displayMessageOnLcd("EQUIPMENT IN USE", 0);
@@ -131,8 +134,13 @@ public class EquipmentActivityMonitor {
 	private static void stopAlert() {
 		// TODO Auto-generated method stub
 		Utils.notifyAzure(("stop " + new Date().toString()), config);
+		notifyService("Stopped");
 		System.out.println("equipment stopped moving!");
 		lcdScreen.clearLCDScreen();
 	}
-
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 }

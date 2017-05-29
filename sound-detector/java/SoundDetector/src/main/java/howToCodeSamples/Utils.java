@@ -25,7 +25,7 @@ public class Utils {
      */
     public static Properties loadConfig(){
 	try {
-	    config.load(SoundDetector.class.getClassLoader().getResourceAsStream("config.properties"));
+	    config.load(SoundDetector.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}

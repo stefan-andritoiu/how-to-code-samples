@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_rfr359f.RFR359F;
@@ -39,6 +40,7 @@ public class CloseCallReporter {
 
 		try{
 			loadConfigurationFile();
+			Services.initServices(config);
 			setupGPS(gpsBus);
 			setupDistanceInterrupter(interrupterPin);
 			listenToGPSSync();
@@ -58,11 +60,17 @@ public class CloseCallReporter {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(CloseCallReporter.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(CloseCallReporter.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private static void notifyService() {
+		String text = "{\"Object detected\" \"location\": " + parsedGPSData + " on " + new Date().toString()
+				+ "\"}";
+		Services.logService(text);
 	}
 
 	/**
@@ -149,6 +157,7 @@ public class CloseCallReporter {
 				if(objectDetected & !wasObjectDetectedLastTime){
 					System.out.println("object detected");
 					Utils.notifyAzure(new Date().toString() + " " + parsedGPSData, config);
+					notifyService();
 				}
 				wasObjectDetectedLastTime = objectDetected;
 			}

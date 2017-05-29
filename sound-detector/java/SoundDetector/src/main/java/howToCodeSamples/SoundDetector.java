@@ -1,8 +1,10 @@
 package howToCodeSamples;
 
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 
@@ -14,7 +16,7 @@ import mraa.mraa;
 public class SoundDetector {
 
     private static upm_mic.Microphone mic;
-    private static upm_i2clcd.Jhd1313m1 rgbLcd;
+    private static upm_jhd1313m1.Jhd1313m1 rgbLcd;
     private static int screenBus = 0, micPin = 0;
     
     private static final short WHITE[] = {0,0,0};
@@ -30,7 +32,7 @@ public class SoundDetector {
      * Initializes the lcd and microphone sensors
      */
 	private static void initSensors() {
-		rgbLcd = new upm_i2clcd.Jhd1313m1(screenBus);
+		rgbLcd = new upm_jhd1313m1.Jhd1313m1(screenBus);
 		mic = new upm_mic.Microphone(micPin);
 	}
 
@@ -57,7 +59,13 @@ public class SoundDetector {
 	rgbLcd.write("volume is: " + averageVolume);
 	
 	Utils.NotifyAzure("The average volume is: " + averageVolume);
+	notifyService(Integer.toString(averageVolume));
     }
+    
+    private static void notifyService(String message) {
+		String text = "{\"Average volume\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
     
  
     /**
@@ -78,9 +86,9 @@ public class SoundDetector {
 			System.err.println("Unsupported platform, exiting");
 			return;
 		}
+		Services.initServices(Utils.loadConfig());
 		initSensors();
-		Utils.loadConfig();
-
+		
 		Timer timer = new Timer();
 		timer.schedule(new TimerTask() {
 			public void run() {

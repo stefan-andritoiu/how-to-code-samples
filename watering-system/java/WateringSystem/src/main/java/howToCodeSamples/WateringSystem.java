@@ -3,6 +3,7 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,6 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 
@@ -119,6 +121,7 @@ public class WateringSystem {
 		schedule.put(currentTime.getHourOfDay(), true);
 		shouldWaterPumpBeCurrentlyOn = true;
 		Utils.notifyAzure("on " + new DateTime().toDateTimeISO().toString(), config);
+		notifyService("Pump on");
 		pump.turnOn();
 	}
 
@@ -131,6 +134,7 @@ public class WateringSystem {
 		schedule.put(currentTime.getHourOfDay(), false);
 		shouldWaterPumpBeCurrentlyOn = false;
 		Utils.notifyAzure("off " + new DateTime().toDateTimeISO().toString(), config);
+		notifyService("Pump off");
 	}
 
 	/**
@@ -275,11 +279,16 @@ public class WateringSystem {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(WateringSystem.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(WateringSystem.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 
 	public static void main(String[] args) {
@@ -299,6 +308,7 @@ public class WateringSystem {
 			return;
 		}
 		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		initiateSchedule();
 		initiateFlowChecks();

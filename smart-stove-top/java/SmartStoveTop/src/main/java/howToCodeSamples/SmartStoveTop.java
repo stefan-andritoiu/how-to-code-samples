@@ -3,6 +3,7 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.JsonObject;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_grovespeaker.GroveSpeaker;
@@ -50,6 +52,7 @@ public class SmartStoveTop {
 			return;
 		}
 		loadConfigurationFile();
+		Services.initServices(config);
 		setupServer();
 		initiateSensors();
 		monitorHighTemperatureAndFire();
@@ -114,6 +117,7 @@ public class SmartStoveTop {
 		    speaker.playSound('g', true, "med");
 		    i++;
 		  }
+		  notifyService("Fire detected");
 	}
 
 
@@ -127,6 +131,8 @@ public class SmartStoveTop {
 		speaker.playSound('c', true, "low");
 		speaker.playSound('d', true, "low");
 		speaker.playSound('b', false, "low");
+		
+		notifyService("High temperature");
 	}
 
 
@@ -213,11 +219,16 @@ public class SmartStoveTop {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(SmartStoveTop.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(SmartStoveTop.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 			targetTemperature = Float.parseFloat(config.getProperty("TEMPERATURE_THRESHOLD"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 
 }

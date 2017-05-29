@@ -1,10 +1,12 @@
 package howToCodeSamples;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 
@@ -37,7 +39,7 @@ public class EarthquakeDetector {
      */
     private static void loadConfig(){
 	try {
-	    config.load(EarthquakeDetector.class.getClassLoader().getResourceAsStream("config.properties"));
+	    config.load(EarthquakeDetector.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
 	}
@@ -106,6 +108,11 @@ public class EarthquakeDetector {
 	}, 100, 100);
 
     }
+    
+    public static void notifyService(String message) {
+		String text = "{\""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
     /**
      *  Main function 
@@ -132,6 +139,7 @@ public class EarthquakeDetector {
 		}
 
 		loadConfig();
+		Services.initServices(config);
 		initSensors();
 		checkQuake();
     }

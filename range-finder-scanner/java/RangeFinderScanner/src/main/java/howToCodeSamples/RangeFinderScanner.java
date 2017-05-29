@@ -3,6 +3,8 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -11,11 +13,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.JsonArray;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 
 public class RangeFinderScanner {
 
+	private static Properties config = new Properties();
 	private static boolean[] stateOfEachDegreeInRadious; 
 	private static upm_rfr359f.RFR359F distanceInterruptor ;
 	private static upm_uln200xa.ULN200XA stepperMotor;
@@ -46,6 +50,8 @@ public class RangeFinderScanner {
 		for(int i=0; i<360; i++){
 			stateOfEachDegreeInRadious[i] = false;
 		}
+		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		setupServer();
 		startSweepingStepperMotor();
@@ -68,6 +74,9 @@ public class RangeFinderScanner {
 				boolean isObjectDetectedInCurrentDegree = distanceInterruptor.objectDetected();
 				stateOfEachDegreeInRadious[currentDegree] = isObjectDetectedInCurrentDegree;
 				System.out.println("degree : " + currentDegree + " state: " + isObjectDetectedInCurrentDegree);
+				if (isObjectDetectedInCurrentDegree) {
+					notifyService(Integer.toString(currentDegree));
+				}
 				if(currentDegree == 359){
 					currentDegree = 0;
 				}
@@ -158,5 +167,24 @@ public class RangeFinderScanner {
 		}
 		return stringBuilder.toString();
 	}
+	
+	/**
+	 * load configuration file 
+	 */
+	private static void loadConfigurationFile() {
+		// TODO Auto-generated method stub
+		try {
+			// Load configuration data from `config.properties` file. Edit this file
+			// to change to correct values for your configuration
+			config.load(RangeFinderScanner.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"Object detected at\": \""+ message + " degrees on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 }

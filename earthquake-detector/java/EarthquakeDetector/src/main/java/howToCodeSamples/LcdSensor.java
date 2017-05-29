@@ -1,7 +1,7 @@
 package howToCodeSamples;
 
 import java.util.Properties;
-
+import upm_jhd1313m1.*;
 
 /**
  * 
@@ -13,7 +13,7 @@ import java.util.Properties;
  */
 public class LcdSensor {
     
-    private upm_i2clcd.Jhd1313m1 lcd;
+    private Jhd1313m1 lcd;
     private Properties config;
     
     private final short RED[] = {255,0,0};
@@ -27,7 +27,7 @@ public class LcdSensor {
      * @param config The loaded config file
      */
     public LcdSensor(int lcdPort, Properties config){
-	this.lcd = new upm_i2clcd.Jhd1313m1(lcdPort, 0x3E, 0x62);
+	this.lcd = new Jhd1313m1(lcdPort, 0x3E, 0x62);
 	this.config = config;
     }
 
@@ -45,6 +45,7 @@ public class LcdSensor {
 	lcd.write(message);
 
 	Utils.notifyAzure(config, message);
+	EarthquakeDetector.notifyService(message);
 	System.out.println("color: " + color + " message: " + message);
     }
 }

@@ -1,6 +1,6 @@
 package howToCodeSamples;
 
-import upm_i2clcd.Jhd1313m1;
+import upm_jhd1313m1.*;
 
 /**
  * @author rhassidi
@@ -9,7 +9,7 @@ import upm_i2clcd.Jhd1313m1;
 public class LcdSensor {
 
 
-    private upm_i2clcd.Jhd1313m1 lcd;
+    private Jhd1313m1 lcd;
 
     private final short BLUE[] = {0,0,255};
     private final short RED[] = {255,0,0};
@@ -40,5 +40,6 @@ public class LcdSensor {
 	lcd.write(message);
 
 	Utils.NotifyAzure(message);
+	AccessControl.notifyService(message);
     }
 }

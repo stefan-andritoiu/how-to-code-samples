@@ -3,6 +3,7 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -23,6 +24,8 @@ import mraa.Platform;
 import mraa.mraa;
 
 import com.google.gson.Gson;
+
+import howToCodeSamples.services.Services;
 
 /**
  * @author elirandr
@@ -133,7 +136,7 @@ public class AlarmClock {
 				// notify how long alarm took to be silenced
 				Period interval = new Period(alarmTime, (new DateTime())); 
 				Utils.notifyAzure(String.valueOf(interval.toDurationFrom(new DateTime()).getMillis()), config);
-				
+				notifyService(String.valueOf(interval.toDurationFrom(new DateTime()).getMillis()));
 				alarmTime.plusDays(1);
 				lcdScreen.setLcdColor("white");
 				buzzer.stopBuzzing();
@@ -203,6 +206,11 @@ public class AlarmClock {
 
 		server.run();
 	}
+	
+	public static void notifyService(String message) {
+		String text = "{\"Alarm duration:\": \"" + message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
 	public static void main(String[] args) {
 		// check that we are running on Galileo or Edison
@@ -227,11 +235,12 @@ public class AlarmClock {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(AlarmClock.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(AlarmClock.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
+		Services.initServices(config);
 		initSensors();
 		buzzer.stopBuzzing();
 		startClock();

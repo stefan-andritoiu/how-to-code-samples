@@ -3,12 +3,15 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_joystick12.Joystick12;
@@ -33,6 +36,8 @@ public class RobotArm {
 			stepRightInputPin3 = 6,
 			stepRightInputPin4 = 7;
 
+	public static Properties config = new Properties();
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Platform platform = mraa.getPlatformType();
@@ -54,6 +59,8 @@ public class RobotArm {
 			System.err.println("Unsupported platform, exiting");
 			return;
 		}
+		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		moveMotorAccordingToJoysticks();
 		setupServer();
@@ -78,6 +85,8 @@ public class RobotArm {
 
 				if (y == 1) { moveStepperMotor(stepperMotor2, CLOCKWISE); }
 				if (y == -1) { moveStepperMotor(stepperMotor2, COUNTER_CLOCKWISE); }
+				
+				notifyService("Joystick input");
 			}
 		}, 0,50);
 
@@ -143,6 +152,7 @@ public class RobotArm {
 			public void runCall(HttpServletRequest request, HttpServletResponse response)
 					throws IOException {
 				moveStepperMotor(stepperMotor1, CLOCKWISE);
+				notifyService("Server input");
 				response.getWriter().println("done");
 			}
 		});
@@ -152,6 +162,7 @@ public class RobotArm {
 			public void runCall(HttpServletRequest request, HttpServletResponse response)
 					throws IOException {
 				moveStepperMotor(stepperMotor1, COUNTER_CLOCKWISE);
+				notifyService("Server input");
 				response.getWriter().println("done");
 			}
 		});
@@ -161,6 +172,7 @@ public class RobotArm {
 			public void runCall(HttpServletRequest request, HttpServletResponse response)
 					throws IOException {
 				moveStepperMotor(stepperMotor2, CLOCKWISE);
+				notifyService("Server input");
 				response.getWriter().println("done");
 
 			}
@@ -171,6 +183,7 @@ public class RobotArm {
 			public void runCall(HttpServletRequest request, HttpServletResponse response)
 					throws IOException {
 				moveStepperMotor(stepperMotor2, COUNTER_CLOCKWISE);
+				notifyService("Server input");
 				response.getWriter().println("done");
 			}
 		});
@@ -203,4 +216,23 @@ public class RobotArm {
 		return stringBuilder.toString();
 	}
 
+	/**
+	 * load configuration file 
+	 */
+	private static void loadConfigurationFile() {
+		// TODO Auto-generated method stub
+		try {
+			// Load configuration data from `config.properties` file. Edit this file
+			// to change to correct values for your configuration
+			config.load(RobotArm.class.getClassLoader().getResourceAsStream("resources/config.properties"));
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 }

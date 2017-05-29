@@ -1,16 +1,19 @@
 package howToCodeSamples;
 
 import java.io.IOException;
+import java.util.Date;
+import java.util.Properties;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.HttpClients;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_buzzer.Buzzer;
-import upm_i2clcd.*;
+import upm_jhd1313m1.*;
 import upm_ttp223.TTP223;
 
 public class Doorbell {
@@ -26,6 +29,8 @@ public class Doorbell {
 	private static Buzzer buzzer = null;
 	private static TTP223 touch = null;
 
+	private static Properties config = new Properties();
+	
 	static class Dingdong implements Runnable {
 		public void run() {
 			if (touch.isPressed()) {
@@ -37,6 +42,7 @@ public class Doorbell {
 				synchronized (buzzer) {
 					buzzer.playSound(2600, 0);
 				}
+				notifyService();
 			} else {
 				reset();
 			}
@@ -113,6 +119,8 @@ public class Doorbell {
 			return;
 		}
 
+		loadConfigurationFile();
+		Services.initServices(config);
 		lcd = new Jhd1313m1(screenBus);
 		buzzer = new Buzzer(buzzerPin);
 		touch = new TTP223(touchPin);
@@ -122,7 +130,7 @@ public class Doorbell {
 		reset();
 
 		Dingdong dingdong = new Dingdong();
-		touch.installISR(mraa.Edge.EDGE_BOTH.swigValue(), dingdong);
+		touch.installISR(2, dingdong);
 		while (!done) {
 			try {
 				Thread.sleep(1000);
@@ -130,5 +138,24 @@ public class Doorbell {
 
 			}
 		}
+	}
+	
+	/**
+	 * load configuration file 
+	 */
+	private static void loadConfigurationFile() {
+		// TODO Auto-generated method stub
+		try {
+			// Load configuration data from `config.properties` file. Edit this file
+			// to change to correct values for your configuration
+			config.load(Doorbell.class.getClassLoader().getResourceAsStream("resources/config.properties"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void notifyService() {
+		String text = "{\"Doorbell pressed on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 }

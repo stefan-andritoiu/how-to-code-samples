@@ -1,6 +1,6 @@
 package howToCodeSamples;
 
-import upm_i2clcd.Jhd1313m1;
+import upm_jhd1313m1.*;
 
 
 /**

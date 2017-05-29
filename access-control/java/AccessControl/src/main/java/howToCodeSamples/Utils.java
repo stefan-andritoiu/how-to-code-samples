@@ -25,7 +25,7 @@ public class Utils {
      * @return the config file
      */
     public static Properties loadConfig() throws IOException{
-	config.load(AccessControl.class.getClassLoader().getResourceAsStream("config.properties"));
+	config.load(AccessControl.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	return config;
 
     }
@@ -41,8 +41,6 @@ public class Utils {
 	    @Override
 	    public void run() {
 		try {
-
-
 		    String url = config.getProperty("SERVER");
 		    HttpURLConnection httpConnection = (HttpURLConnection) (new URL(url)).openConnection();
 		    httpConnection.setRequestMethod("PUT");
@@ -81,5 +79,4 @@ public class Utils {
 	thread.run();
 
     }
-
 }

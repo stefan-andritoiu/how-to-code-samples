@@ -2,10 +2,12 @@ package howToCodeSamples;
 
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 
 import org.joda.time.DateTime;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_uln200xa.ULN200XA;
@@ -51,6 +53,7 @@ public class LineFollowingRobot {
 		// TODO Auto-generated method stub
 		initiateSensors();
 		loadConfigurationFile();
+		Services.initServices(config);
 		searchForLine();
 		
 	}
@@ -63,7 +66,7 @@ public class LineFollowingRobot {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(LineFollowingRobot.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(LineFollowingRobot.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -88,6 +91,7 @@ public class LineFollowingRobot {
 			System.out.println("line found");
 			moveForward();
 			Utils.notifyAzure(new DateTime().toDateTimeISO().toString(), config);
+			notifyService("moving");
 		}
 
 	}
@@ -124,5 +128,9 @@ public class LineFollowingRobot {
 		stepperMotor.setDirection(motorDirection);
 		stepperMotor.stepperSteps(steps);
 	}
-
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 }

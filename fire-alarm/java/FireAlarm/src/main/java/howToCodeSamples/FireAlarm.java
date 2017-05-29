@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_grove.GroveTemp;
@@ -43,6 +44,7 @@ public class FireAlarm {
 		}
 
 		loadConfigurationFile();
+		Services.initServices(config);
 		initiateSensors();
 		listenToTemperatureChanges();
 	}
@@ -56,7 +58,7 @@ public class FireAlarm {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(FireAlarm.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(FireAlarm.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 			temperatureThreshold =Integer.parseInt(config.getProperty("TEMPERATURE_THRESHOLD"));
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -125,7 +127,7 @@ public class FireAlarm {
 		// TODO Auto-generated method stub
 		Utils.sendMessageWithTwilio("fire alarm", config);
 		Utils.notifyAzure((new Date().toString()), config);
-
+		notifyService("Fire alarm!");
 		System.out.println("fire!");
 		isAlertOn = true;
 		lcdScreen.displayMessageOnLcd("fire detected", 1);
@@ -153,7 +155,13 @@ public class FireAlarm {
 		lcdScreen.displayMessageOnLcd("fire stopped", 1);
 		lcdScreen.setLcdColor("white");
 		buzzer.stopBuzzing();
+		notifyService("Fire stopped");
 		FireTimer.cancel();
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 
 }

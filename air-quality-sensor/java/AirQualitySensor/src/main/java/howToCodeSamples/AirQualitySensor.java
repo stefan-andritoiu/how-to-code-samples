@@ -1,11 +1,12 @@
 package howToCodeSamples;
 
 import java.io.IOException;
-
+import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 import upm_gas.TP401;
@@ -53,9 +54,10 @@ public class AirQualitySensor {
      * the allowed threshold of safety
      */
     public static void alertBadAirQuality(){
-	Utils.NotifyAzure(config);
-	chime();
-    }
+		Utils.NotifyAzure(config);
+		notifyService();
+		chime();
+	}
 
     /**
      * Checks every 1sec if the air quality is higher than the threshold that is 
@@ -77,6 +79,11 @@ public class AirQualitySensor {
 
 	}, 1000, 1000);
     }
+    
+    private static void notifyService() {
+    	String text = "{\"Air quality alert\": \"" + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
     
     /**
      * Main function checks the air quality every 1 second,
@@ -101,10 +108,11 @@ public class AirQualitySensor {
 		}
 
 	try {
-	    config.load(AirQualitySensor.class.getClassLoader().getResourceAsStream("config.properties"));
+	    config.load(AirQualitySensor.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
+	Services.initServices(config);
 	initSensors();
 	checkAirQuality();
     }

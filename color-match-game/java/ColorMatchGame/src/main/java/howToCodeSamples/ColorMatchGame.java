@@ -2,17 +2,21 @@ package howToCodeSamples;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 
 public class ColorMatchGame {
 
+	private static Properties config = new Properties();
 	private static LcdScreen lcdScreen;
 	private static ArrayList<String> colorSequence = new ArrayList<String>();
 	private static int checkedIndex = 0;
@@ -37,6 +41,8 @@ public class ColorMatchGame {
 			return;
 		}
 
+		loadConfigurationFile();
+		Services.initServices(config);
 		lcdScreen = new LcdScreen(lcdBus);
 		lcdScreen.setLcdColor("white");
 		setupServer();
@@ -135,6 +141,7 @@ public class ColorMatchGame {
 		if(!checkUserColorInput(colorInput)){
 			try {
 				response.getWriter().write("error");
+				notifyService(colorInput + " :Error");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -144,6 +151,7 @@ public class ColorMatchGame {
 		if(checkLevelEnd()){
 			try {
 				response.getWriter().write("nextLevel");
+				notifyService(colorInput + " :Next level");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -152,6 +160,7 @@ public class ColorMatchGame {
 		}
 		try {
 			response.getWriter().write("ok");
+			notifyService(colorInput + " :Ok");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -269,5 +278,25 @@ public class ColorMatchGame {
 			lcdScreen.setLcdColor(WHITE);
 		}
 		return answer;
+	}
+	
+	/**
+	 * load configuration file 
+	 */
+	private static void loadConfigurationFile() {
+		// TODO Auto-generated method stub
+		try {
+			// Load configuration data from `config.properties` file. Edit this file
+			// to change to correct values for your configuration
+			config.load(ColorMatchGame.class.getClassLoader().getResourceAsStream("resources/config.properties"));
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
 	}
 }

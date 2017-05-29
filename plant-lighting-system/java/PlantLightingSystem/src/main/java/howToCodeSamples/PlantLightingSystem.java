@@ -3,6 +3,7 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Map;
@@ -22,6 +23,8 @@ import mraa.mraa;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import howToCodeSamples.services.Services;
 
 public class PlantLightingSystem {
 
@@ -128,6 +131,7 @@ public class PlantLightingSystem {
 		shouldLightBeCurrentlyOn = true;
 		lcdController.displayMessageOnLcd("on", 0);
 		Utils.notifyAzure("on", config);
+		notifyService("on");
 	}
 	
 	/**
@@ -140,6 +144,7 @@ public class PlantLightingSystem {
 		shouldLightBeCurrentlyOn = false;
 		lcdController.displayMessageOnLcd("off", 0);
 		Utils.notifyAzure("off", config);
+		notifyService("off");
 	}
 
 	/**
@@ -219,6 +224,7 @@ public class PlantLightingSystem {
 				int moistureValue = moistureController.getCurrentMoistureValue();
 				lcdController.displayMessageOnLcd("moisture (" + moistureValue + ")", 0); 
 				Utils.notifyAzure(Integer.toString(moistureValue), config);
+				notifyService("Moisture: " + Integer.toString(moistureValue));
 
 			}
 		}, 0, 30*1000);
@@ -243,6 +249,7 @@ public class PlantLightingSystem {
 					System.out.println("alerting");
 					lcdController.displayMessageOnLcd("Lighting alert",0);
 					Utils.sendMessageWithTwilio("Lighting alert", config);
+					notifyService("Lighting alert");
 				}
 			}
 		};
@@ -271,6 +278,11 @@ public class PlantLightingSystem {
 		return httpJson.toString();
 
 	}
+	
+	private static void notifyService(String message) {
+		String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
 	public static void main(String[] args) {
 		Platform platform = mraa.getPlatformType();
@@ -292,10 +304,11 @@ public class PlantLightingSystem {
 		try {
 			// Load configuration data from `config.properties` file. Edit this file
 			// to change to correct values for your configuration
-			config.load(PlantLightingSystem.class.getClassLoader().getResourceAsStream("config.properties"));
+			config.load(PlantLightingSystem.class.getClassLoader().getResourceAsStream("resources/config.properties"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		Services.initServices(config);
 		initiateSensors();
 		initiateSchedule();
 		initiateLightChecks();

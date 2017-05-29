@@ -3,11 +3,13 @@ package howToCodeSamples;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import howToCodeSamples.services.Services;
 import mraa.Platform;
 import mraa.mraa;
 
@@ -16,7 +18,6 @@ public class AccessControl {
     private static Properties config;
     private static MotionActivityHandling motionActivityHandling;   
     private static int screenBus = 0, motionPin = 0;
-
 
     /**
      * Initializes motion activity handling object that constructs the lcd and the 
@@ -78,6 +79,11 @@ public class AccessControl {
 
 	server.run();
     }
+    
+    public static void notifyService(String message) {
+    	String text = "{\"State\": \""+ message + " on " + new Date().toString() + "\"}";
+		Services.logService(text);
+	}
 
     /**
      *  The main function calls `server()` to start up
@@ -100,6 +106,7 @@ public class AccessControl {
 			return;
 		}
 		loadConfigFile();
+		Services.initServices(config);	
 		initSensors();
 		setupServer();
 		motionActivityHandling.lookForMotion();
